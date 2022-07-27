@@ -1,0 +1,215 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model role {
+  // Nível de usuário: admin, lojista, entregador, etc...
+  id        Int      @id @default(autoincrement())
+  name      String?
+  slug      String?  @unique
+  users     user[]
+  status    Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("roles")
+}
+
+model user {
+  // Usuários cadastrados no sistema
+  id             Int             @id @default(autoincrement())
+  name           String?
+  email          String?         @unique
+  password       String?
+  path           String?
+  role           role?           @relation(fields: [roleId], references: [id])
+  roleId         Int?
+  colors         color[]
+  categories     category[]
+  optiongroups   optionGroup[]
+  options        option[]
+  products       product[]
+  banners        banner[]
+  productGroups  productGroup[]
+  productOptions productOption[]
+  storeThemes    storeTheme[]
+  status         Int?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@map("users")
+}
+
+model color {
+  // Cores do painel
+  id              Int      @id @default(autoincrement())
+  colorBackground String?
+  colorContainer  String?
+  colorText       String?
+  colorButton     String?
+  status          Int?
+  user            user?    @relation(fields: [userId], references: [id])
+  userId          Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("colors")
+}
+
+model category {
+  // Categorias dos produtos
+  id        Int       @id @default(autoincrement())
+  name      String?   @db.VarChar(255)
+  slug      String?
+  user      user?     @relation(fields: [userId], references: [id])
+  userId    Int?
+  products  product[]
+  status    Int?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("categories")
+}
+
+model optionGroup {
+  // Grupo de opções
+  id            Int            @id @default(autoincrement())
+  name          String?
+  typeOption    String? // Os tipos estão dentro de /data/optionGroupSelect.ts, adicione mais se necessário
+  user          user?          @relation(fields: [userId], references: [id])
+  userId        Int?
+  options       option[]
+  productGroups productGroup[]
+  status        Int?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("option_groups")
+}
+
+model option {
+  // Opções de um grupo de opções
+  id            Int             @id @default(autoincrement())
+  name          String?
+  optionGroup   optionGroup?    @relation(fields: [optionGroupId], references: [id])
+  optionGroupId Int?
+  user          user?           @relation(fields: [userId], references: [id])
+  userId        Int?
+  productOption productOption[]
+  status        Int?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@map("options")
+}
+
+model product {
+  // Produtos cadastrados pela loja
+  id             Int             @id @default(autoincrement())
+  name           String?
+  slug           String?
+  price          String?
+  description    String?
+  path           String?
+  category       category?       @relation(fields: [categoryId], references: [id])
+  categoryId     Int?
+  user           user?           @relation(fields: [userId], references: [id])
+  userId         Int?
+  banners        banner[]
+  productGroups  productGroup[]
+  productOptions productOption[]
+  status         Int?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@map("products")
+}
+
+model banner {
+  // Banners cadastrados vinculados a produtos
+  id        Int      @id @default(autoincrement())
+  name      String?
+  path      String?
+  product   product? @relation(fields: [productId], references: [id])
+  productId Int?
+  user      user?    @relation(fields: [userId], references: [id])
+  userId    Int?
+  status    Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("banners")
+}
+
+model productGroup {
+  // Grupo de opções vinculado ao produto
+  id             Int             @id @default(autoincrement())
+  name           String?
+  product        product?        @relation(fields: [productId], references: [id])
+  productId      Int?
+  optionGroup    optionGroup?    @relation(fields: [optionGroupId], references: [id])
+  optionGroupId  Int?
+  status         Int?
+  productOptions productOption[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  user           user?           @relation(fields: [userId], references: [id])
+  userId         Int?
+
+  @@map("product_groups")
+}
+
+model productOption {
+  // Opções disponíveis do grupo vinculado
+  id             Int           @id @default(autoincrement())
+  name           String?
+  product        product?      @relation(fields: [productId], references: [id])
+  productId      Int?
+  user           user?         @relation(fields: [userId], references: [id])
+  userId         Int?
+  productGroup   productGroup? @relation(fields: [productGroupId], references: [id])
+  productGroupId Int?
+  option         option?       @relation(fields: [optionId], references: [id])
+  optionId       Int?
+  stock          Int?
+  price          String?
+  status         Int?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@map("product_options")
+}
+
+model storeTheme {
+  // Edita cores e informações da loja
+  id              Int      @id @default(autoincrement())
+  name            String?
+  theme           String? // Escolhe o tema de exibição theme01, theme02...
+  colorNavbar     String?
+  colorBackground String?
+  colorDrawer     String?
+  colorFooter     String?
+  head            String?  @db.Text()
+  footer          String?
+  address         String?
+  schedule        String?
+  path            String?
+  slug            String?  @unique
+  type            String? // store (/ é a home), storeMarketplace (/slug é a home)
+  user            user?    @relation(fields: [userId], references: [id])
+  userId          Int?
+  status          Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  // theme e type precisam ser editados no banco e incluídos manualmente
+
+  @@map("store_colors")
+}
